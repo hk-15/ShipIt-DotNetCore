@@ -14,6 +14,7 @@ namespace ShipIt.Repositories
         ProductDataModel GetProductByGtin(string gtin);
         IEnumerable<ProductDataModel> GetProductsByGtin(List<string> gtins);
         IEnumerable<ProductDataModel> GetProductsById(IEnumerable<int> ids);
+        ProductDataModel GetProductById(int id);
         void AddProducts(IEnumerable<ProductDataModel> products);
         void DiscontinueProductByGtin(string gtin);
     }
@@ -23,48 +24,84 @@ namespace ShipIt.Repositories
         public int GetCount()
         {
             string EmployeeCountSQL = "SELECT COUNT(*) FROM gcp";
-            return (int) QueryForLong(EmployeeCountSQL);
+            return (int)QueryForLong(EmployeeCountSQL);
         }
 
         public ProductDataModel GetProductByGtin(string gtin)
         {
-
-            string sql = "SELECT p_id, gtin_cd, gcp_cd, gtin_nm, m_g, l_th, ds, min_qt FROM gtin WHERE gtin_cd = @gtin_cd";
+            string sql =
+                "SELECT p_id, gtin_cd, gcp_cd, gtin_nm, m_g, l_th, ds, min_qt FROM gtin WHERE gtin_cd = @gtin_cd";
             var parameter = new NpgsqlParameter("@gtin_cd", gtin);
-            return base.RunSingleGetQuery(sql, reader => new ProductDataModel(reader),
-                string.Format("No products found with gtin of value {0}", gtin), parameter);
+            return base.RunSingleGetQuery(
+                sql,
+                reader => new ProductDataModel(reader),
+                string.Format("No products found with gtin of value {0}", gtin),
+                parameter
+            );
         }
 
         public IEnumerable<ProductDataModel> GetProductsByGtin(List<string> gtins)
         {
-
-            string sql = String.Format("SELECT p_id, gtin_cd, gcp_cd, gtin_nm, m_g, l_th, ds, min_qt FROM gtin WHERE gtin_cd IN ('{0}')", 
-                String.Join("','", gtins));
-            return base.RunGetQuery(sql, reader => new ProductDataModel(reader), "No products found with given gtin ids", null);
+            string sql = String.Format(
+                "SELECT p_id, gtin_cd, gcp_cd, gtin_nm, m_g, l_th, ds, min_qt FROM gtin WHERE gtin_cd IN ('{0}')",
+                String.Join("','", gtins)
+            );
+            return base.RunGetQuery(
+                sql,
+                reader => new ProductDataModel(reader),
+                "No products found with given gtin ids",
+                null
+            );
         }
 
         public IEnumerable<ProductDataModel> GetProductsById(IEnumerable<int> ids)
         {
+            string sql = String.Format(
+                "SELECT p_id, gtin_cd, gcp_cd, gtin_nm, m_g, l_th, ds, min_qt FROM gtin WHERE p_id IN ('{0}')",
+                String.Join("','", ids)
+            );
+            //var parameter = new NpgsqlParameter("@p_id", ids);
+            string noProductWithIdErrorMessage = string.Format(
+                "No products found with id of value {0}",
+                ids.ToString()
+            );
+            return base.RunGetQuery(
+                sql,
+                reader => new ProductDataModel(reader),
+                noProductWithIdErrorMessage,
+                //parameter
+                null
+            );
+        }
 
-            string sql = "SELECT p_id, gtin_cd, gcp_cd, gtin_nm, m_g, l_th, ds, min_qt FROM gtin WHERE p_id IN ('{0}')";
-            var parameter = new NpgsqlParameter("@p_id", ids);
-            string noProductWithIdErrorMessage = string.Format("No products found with id of value {0}", ids.ToString());
-            return RunGetQuery(sql, reader => new ProductDataModel(reader), noProductWithIdErrorMessage, parameter);
+        public ProductDataModel GetProductById(int id)
+        {
+            string sql =
+                "SELECT p_id, gtin_cd, gcp_cd, gtin_nm, m_g, l_th, ds, min_qt FROM gtin WHERE p_id = @p_id";
+            var parameter = new NpgsqlParameter("@p_id", id);
+            string noProductWithIdErrorMessage = string.Format(
+                "No products found with id of value {0}",
+                id.ToString()
+            );
+            return RunSingleGetQuery(sql, reader => new ProductDataModel(reader), noProductWithIdErrorMessage, parameter);
         }
 
         public void DiscontinueProductByGtin(string gtin)
         {
             string sql = "UPDATE gtin SET ds = 1 WHERE gtin_cd = @gtin_cd";
             var parameter = new NpgsqlParameter("@gtin_cd", gtin);
-            string noProductWithGtinErrorMessage =
-                string.Format("No products found with gtin of value {0}", gtin.ToString());
+            string noProductWithGtinErrorMessage = string.Format(
+                "No products found with gtin of value {0}",
+                gtin.ToString()
+            );
 
             RunSingleQuery(sql, noProductWithGtinErrorMessage, parameter);
         }
 
         public void AddProducts(IEnumerable<ProductDataModel> products)
         {
-            string sql = "INSERT INTO gtin (gtin_cd, gcp_cd, gtin_nm, m_g, l_th, ds, min_qt) VALUES (@gtin_cd, @gcp_cd, @gtin_nm, @m_g, @l_th, @ds, @min_qt)";
+            string sql =
+                "INSERT INTO gtin (gtin_cd, gcp_cd, gtin_nm, m_g, l_th, ds, min_qt) VALUES (@gtin_cd, @gcp_cd, @gtin_nm, @m_g, @l_th, @ds, @min_qt)";
 
             var parametersList = new List<NpgsqlParameter[]>();
             var gtins = new List<string>();
@@ -73,8 +110,9 @@ namespace ShipIt.Repositories
             {
                 if (gtins.Contains(product.Gtin))
                 {
-                    throw new MalformedRequestException(string.Format("Cannot add products with duplicate gtins: {0}",
-                        product.Gtin));
+                    throw new MalformedRequestException(
+                        string.Format("Cannot add products with duplicate gtins: {0}", product.Gtin)
+                    );
                 }
                 gtins.Add(product.Gtin);
                 parametersList.Add(product.GetNpgsqlParameters().ToArray());
@@ -83,8 +121,12 @@ namespace ShipIt.Repositories
             var conflicts = TryGetProductsByGtin(gtins);
             if (conflicts.Any())
             {
-                throw new MalformedRequestException(string.Format("Cannot add products with existing gtins: {0}",
-                    string.Join(", ", conflicts.Select(c => c.Gtin))));
+                throw new MalformedRequestException(
+                    string.Format(
+                        "Cannot add products with existing gtins: {0}",
+                        string.Join(", ", conflicts.Select(c => c.Gtin))
+                    )
+                );
             }
 
             RunTransaction(sql, parametersList);

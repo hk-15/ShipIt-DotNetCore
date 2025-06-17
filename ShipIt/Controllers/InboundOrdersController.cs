@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Mvc;
 using ShipIt.Exceptions;
 using ShipIt.Models.ApiModels;
@@ -13,14 +14,21 @@ namespace ShipIt.Controllers
     [Route("orders/inbound")]
     public class InboundOrderController : ControllerBase
     {
-        private static readonly log4net.ILog Log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod()?.DeclaringType);
+        private static readonly log4net.ILog Log = log4net.LogManager.GetLogger(
+            System.Reflection.MethodBase.GetCurrentMethod()?.DeclaringType
+        );
 
         private readonly IEmployeeRepository _employeeRepository;
         private readonly ICompanyRepository _companyRepository;
         private readonly IProductRepository _productRepository;
         private readonly IStockRepository _stockRepository;
 
-        public InboundOrderController(IEmployeeRepository employeeRepository, ICompanyRepository companyRepository, IProductRepository productRepository, IStockRepository stockRepository)
+        public InboundOrderController(
+            IEmployeeRepository employeeRepository,
+            ICompanyRepository companyRepository,
+            IProductRepository productRepository,
+            IStockRepository stockRepository
+        )
         {
             _employeeRepository = employeeRepository;
             _stockRepository = stockRepository;
@@ -35,58 +43,80 @@ namespace ShipIt.Controllers
 
             Stopwatch timer = new Stopwatch();
 
-            var operationsManager = new Employee(_employeeRepository.GetOperationsManager(warehouseId));
+            var operationsManager = new Employee(
+                _employeeRepository.GetOperationsManager(warehouseId)
+            );
 
             Log.Debug(String.Format("Found operations manager: {0}", operationsManager));
 
-            
             var allStock = _stockRepository.GetStockByWarehouseId(warehouseId);
-            var products = _productRepository.GetProductsById(allStock.Select(stock => stock.ProductId));
-            console.WriteLine(products)
-  
-            Dictionary<Company, List<InboundOrderLine>> orderlinesByCompany = new Dictionary<Company, List<InboundOrderLine>>();
-            
+            var products = _productRepository.GetProductsById(
+                allStock.Select(stock => stock.ProductId)
+            );
+
+            List<ProductDataModel> productsInWarehouseList = new List<ProductDataModel>();
+            //allCompanies
+            //Company company = allCOmpanies.Firstordefault(company => product.gcp = company.gcp);
+            // foreach (ProductDataModel product in productsInWarehouseList)
+
+            // { if (p.held < product.LowerThreshold && !product.Discontinued)
+            //     productsInWarehouseList.Add(product);
+
+            // }
+
+            Dictionary<Company, List<InboundOrderLine>> orderlinesByCompany =
+                new Dictionary<Company, List<InboundOrderLine>>();
+
             foreach (var stock in allStock)
             {
-                timer.Start();
-                //Product product = new Product(_productRepository.GetProductById(stock.ProductId));
-                timer.Stop();
-                Console.WriteLine("GetProductById " + timer.Elapsed);
-                if (stock.held < product.LowerThreshold && !product.Discontinued)
+                foreach (var product in products)
                 {
-                    timer.Restart();
-                    Company company = new Company(_companyRepository.GetCompany(product.Gcp));
+                    if (stock.held < product.LowerThreshold && product.Discontinued != 1)
+                        timer.Start();
+                    //Product product = new Product(_productRepository.GetProductById(stock.ProductId));
                     timer.Stop();
-                    Console.WriteLine("GetCompany " + timer.Elapsed);
+                    Console.WriteLine("GetProductById " + timer.Elapsed);
 
-                    var orderQuantity = Math.Max(product.LowerThreshold * 3 - stock.held, product.MinimumOrderQuantity);
-
-                    if (!orderlinesByCompany.ContainsKey(company))
                     {
                         timer.Restart();
-                        orderlinesByCompany.Add(company, new List<InboundOrderLine>());
+                        Company company = new Company(_companyRepository.GetCompany(product.Gcp));
                         timer.Stop();
-                        Console.WriteLine("AddCompany " + timer.Elapsed);
-                    }
+                        Console.WriteLine("GetCompany " + timer.Elapsed);
 
-                    orderlinesByCompany[company].Add(
-                        new InboundOrderLine()
+                        var orderQuantity = Math.Max(
+                            product.LowerThreshold * 3 - stock.held,
+                            product.MinimumOrderQuantity
+                        );
+
+                        if (!orderlinesByCompany.ContainsKey(company))
                         {
-                            gtin = product.Gtin,
-                            name = product.Name,
-                            quantity = orderQuantity
-                        });
+                            timer.Restart();
+                            orderlinesByCompany.Add(company, new List<InboundOrderLine>());
+                            timer.Stop();
+                            Console.WriteLine("AddCompany " + timer.Elapsed);
+                        }
+
+                        orderlinesByCompany[company]
+                            .Add(
+                                new InboundOrderLine()
+                                {
+                                    gtin = product.Gtin,
+                                    name = product.Name,
+                                    quantity = orderQuantity,
+                                }
+                            );
+                    }
                 }
             }
             timer.Stop();
-            Console.WriteLine("All Stock - foreach loop" + timer.Elapsed);
+            //Console.WriteLine("All Stock - foreach loop" + timer.Elapsed);
             Log.Debug(String.Format("Constructed order lines: {0}", orderlinesByCompany));
 
             timer.Restart();
             var orderSegments = orderlinesByCompany.Select(ol => new OrderSegment()
             {
                 OrderLines = ol.Value,
-                Company = ol.Key
+                Company = ol.Key,
             });
             timer.Stop();
             Console.WriteLine("Order segments " + timer.Elapsed);
@@ -97,7 +127,7 @@ namespace ShipIt.Controllers
             {
                 OperationsManager = operationsManager,
                 WarehouseId = warehouseId,
-                OrderSegments = orderSegments
+                OrderSegments = orderSegments,
             };
         }
 
@@ -112,13 +142,23 @@ namespace ShipIt.Controllers
             {
                 if (gtins.Contains(orderLine.gtin))
                 {
-                    throw new ValidationException(String.Format("Manifest contains duplicate product gtin: {0}", orderLine.gtin));
+                    throw new ValidationException(
+                        String.Format(
+                            "Manifest contains duplicate product gtin: {0}",
+                            orderLine.gtin
+                        )
+                    );
                 }
                 gtins.Add(orderLine.gtin);
             }
 
-            IEnumerable<ProductDataModel> productDataModels = _productRepository.GetProductsByGtin(gtins);
-            Dictionary<string, Product> products = productDataModels.ToDictionary(p => p.Gtin, p => new Product(p));
+            IEnumerable<ProductDataModel> productDataModels = _productRepository.GetProductsByGtin(
+                gtins
+            );
+            Dictionary<string, Product> products = productDataModels.ToDictionary(
+                p => p.Gtin,
+                p => new Product(p)
+            );
 
             Log.Debug(String.Format("Retrieved products to verify manifest: {0}", products));
 
@@ -136,8 +176,13 @@ namespace ShipIt.Controllers
                 Product product = products[orderLine.gtin];
                 if (!product.Gcp.Equals(requestModel.Gcp))
                 {
-                    errors.Add(String.Format("Manifest GCP ({0}) doesn't match Product GCP ({1})",
-                        requestModel.Gcp, product.Gcp));
+                    errors.Add(
+                        String.Format(
+                            "Manifest GCP ({0}) doesn't match Product GCP ({1})",
+                            requestModel.Gcp,
+                            product.Gcp
+                        )
+                    );
                 }
                 else
                 {
@@ -148,7 +193,12 @@ namespace ShipIt.Controllers
             if (errors.Count() > 0)
             {
                 Log.Debug(String.Format("Found errors with inbound manifest: {0}", errors));
-                throw new ValidationException(String.Format("Found inconsistencies in the inbound manifest: {0}", String.Join("; ", errors)));
+                throw new ValidationException(
+                    String.Format(
+                        "Found inconsistencies in the inbound manifest: {0}",
+                        String.Join("; ", errors)
+                    )
+                );
             }
 
             Log.Debug(String.Format("Increasing stock levels with manifest: {0}", requestModel));
