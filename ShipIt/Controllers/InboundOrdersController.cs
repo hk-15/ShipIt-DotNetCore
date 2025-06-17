@@ -1,5 +1,6 @@
 ﻿﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Microsoft.AspNetCore.Mvc;
 using ShipIt.Exceptions;
@@ -32,28 +33,43 @@ namespace ShipIt.Controllers
         {
             Log.Info("orderIn for warehouseId: " + warehouseId);
 
+            Stopwatch timer = new Stopwatch();
+
             var operationsManager = new Employee(_employeeRepository.GetOperationsManager(warehouseId));
 
             Log.Debug(String.Format("Found operations manager: {0}", operationsManager));
 
+            
             var allStock = _stockRepository.GetStockByWarehouseId(warehouseId);
-
+            var products = _productRepository.GetProductsById(allStock.Select(stock => stock.ProductId));
+            console.WriteLine(products)
+  
             Dictionary<Company, List<InboundOrderLine>> orderlinesByCompany = new Dictionary<Company, List<InboundOrderLine>>();
+            
             foreach (var stock in allStock)
             {
-                Product product = new Product(_productRepository.GetProductById(stock.ProductId));
-                if(stock.held < product.LowerThreshold && !product.Discontinued)
+                timer.Start();
+                //Product product = new Product(_productRepository.GetProductById(stock.ProductId));
+                timer.Stop();
+                Console.WriteLine("GetProductById " + timer.Elapsed);
+                if (stock.held < product.LowerThreshold && !product.Discontinued)
                 {
+                    timer.Restart();
                     Company company = new Company(_companyRepository.GetCompany(product.Gcp));
+                    timer.Stop();
+                    Console.WriteLine("GetCompany " + timer.Elapsed);
 
                     var orderQuantity = Math.Max(product.LowerThreshold * 3 - stock.held, product.MinimumOrderQuantity);
 
                     if (!orderlinesByCompany.ContainsKey(company))
                     {
+                        timer.Restart();
                         orderlinesByCompany.Add(company, new List<InboundOrderLine>());
+                        timer.Stop();
+                        Console.WriteLine("AddCompany " + timer.Elapsed);
                     }
 
-                    orderlinesByCompany[company].Add( 
+                    orderlinesByCompany[company].Add(
                         new InboundOrderLine()
                         {
                             gtin = product.Gtin,
@@ -62,14 +78,18 @@ namespace ShipIt.Controllers
                         });
                 }
             }
-
+            timer.Stop();
+            Console.WriteLine("All Stock - foreach loop" + timer.Elapsed);
             Log.Debug(String.Format("Constructed order lines: {0}", orderlinesByCompany));
 
+            timer.Restart();
             var orderSegments = orderlinesByCompany.Select(ol => new OrderSegment()
             {
                 OrderLines = ol.Value,
                 Company = ol.Key
             });
+            timer.Stop();
+            Console.WriteLine("Order segments " + timer.Elapsed);
 
             Log.Info("Constructed inbound order");
 
