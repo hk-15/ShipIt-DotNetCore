@@ -10,7 +10,6 @@ namespace ShipIt.Models.ApiModels
     {
         public int WarehouseId { get; set; }
         public IEnumerable<OrderLine> OrderLines { get; set; }
-
         public override String ToString()
         {
             return new StringBuilder()

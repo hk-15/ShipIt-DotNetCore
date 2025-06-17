@@ -28,10 +28,11 @@ POSTGRES_CONNECTION_STRING="Server=localhost;Port=5432;Database=your_database_na
 ```
 
 ## Running The API
-The project uses .NET Core 3.1. To run the program use the command `dotnet run --roll-forward Major` in the ShipIt directory to run the program using the latest version of .NET installed on your dev machine.
+The project uses .NET Core 3.1 so you'll need to update the target framework in the .csproj file to the latest version of .NET installed on your dev machine.
+To run the program use the command `dotnet run` 
 
 ## Running The Tests
-To run the tests you should be able to run `dotnet test` in the ShipItTests directory.
+Update the target framework as above, and run the tests with `dotnet test` in the ShipItTests directory.
 
 ## Deploying to Production
 TODO
