@@ -2,12 +2,10 @@
 
 ## Setup Instructions
 Open the project in VSCode.
-VSCode should automatically set up and install everything you'll need apart from the database connection!
 
 ### Setting up the Database.
 
-
-Install PostgreSQL and pgAdmin downloaded from https://www.postgresql.org/download/windows/
+Install PostgreSQL and pgAdmin from https://www.postgresql.org/download/windows/
 
 This installer includes:
 
@@ -15,10 +13,11 @@ This installer includes:
 - pgAdmin, a graphical tool for managing and developing your databases
 - StackBuilder, a package manager for downloading and installing additional PostgreSQL tools and drivers. Stackbuilder includes management, integration, migration, replication, geospatial, connectors and other tools.
 
-Create 2 new postgres databases in pgAdmin - one for the main program and one for our test database. Set the owner of the main database to `postgres`.
-Ask a team member for a dump of the production databases to create and populate your tables.
+Create a new Login/Group Role and set a password, then go to the Privileges tab and make sure `Can login?` and `Create databases?` are both enabled.
 
-Import the Database backup by right-clicking the main database in pgAdmin and selecting `Restore`. Change the format to `Plain` and select the dump file. Then, change the owner of the main database to an owner with a password (the program won't run otherwise).
+Then, create 2 new postgres databases in pgAdmin - one for the main program and one for our test database. Set the owner as the new role you have just added.
+
+Ask a team member for a dump of the production databases to create and populate your tables. Import the dump by right-clicking each database in pgAdmin and selecting `Restore`. Change the format to `Plain` and select the dump file. Then, for each database, you will need to right-click each table and go to Properties and set the owner to the new role you created.
 
 Then for each of the projects, add a `.env` file at the root of the project.
 That file should contain a property named `POSTGRES_CONNECTION_STRING`.
