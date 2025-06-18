@@ -17,6 +17,7 @@ namespace ShipIt.Repositories
         ProductDataModel GetProductById(int id);
         void AddProducts(IEnumerable<ProductDataModel> products);
         void DiscontinueProductByGtin(string gtin);
+        IEnumerable<ProductStockCompanyModel> GetProductsDetails(int id);
     }
 
     public class ProductRepository : RepositoryBase, IProductRepository
@@ -143,6 +144,18 @@ namespace ShipIt.Repositories
             {
                 return new List<ProductDataModel>();
             }
+        }
+
+        public IEnumerable<ProductStockCompanyModel> GetProductsDetails(int id)
+        {
+            string sql =
+                "SELECT stock.p_id, hld, w_id, gtin_cd, gtin.gcp_cd, gtin_nm, m_g, l_th, ds, min_qt, gln_nm, gln_addr_02, gln_addr_03, gln_addr_04, gln_addr_postalcode, gln_addr_city, contact_tel, contact_mail FROM stock JOIN gtin ON stock.p_id = gtin.p_id JOIN gcp ON gtin.gcp_cd = gcp.gcp_cd WHERE stock.w_id = @w_id";
+            var parameter = new NpgsqlParameter("@w_id", id);
+            string noProductsWithIdErrorMessage = string.Format(
+                "No products found in warehouse with id of value {0}",
+                id.ToString()
+            );
+            return RunGetQuery(sql, reader => new ProductStockCompanyModel(reader), noProductsWithIdErrorMessage, parameter);
         }
     }
 }

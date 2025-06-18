@@ -50,7 +50,7 @@ namespace ShipItTest
             onSetUp();
 
             var inboundOrder = inboundOrderController.Get(WAREHOUSE_ID);
-
+            
             Assert.AreEqual(inboundOrder.WarehouseId, WAREHOUSE_ID);
             Assert.IsTrue(EmployeesAreEqual(inboundOrder.OperationsManager, OPS_MANAGER));
             Assert.AreEqual(inboundOrder.OrderSegments.Count(), 0);
