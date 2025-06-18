@@ -1,6 +1,9 @@
 ﻿﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using ShipIt.Exceptions;
 using ShipIt.Models.ApiModels;
@@ -8,11 +11,12 @@ using ShipIt.Repositories;
 
 namespace ShipIt.Controllers
 {
-
     [Route("employees")]
     public class EmployeeController : ControllerBase
     {
-        private static readonly log4net.ILog Log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod()?.DeclaringType);
+        private static readonly log4net.ILog Log = log4net.LogManager.GetLogger(
+            System.Reflection.MethodBase.GetCurrentMethod()?.DeclaringType
+        );
 
         private readonly IEmployeeRepository _employeeRepository;
 
@@ -25,11 +29,23 @@ namespace ShipIt.Controllers
         public EmployeeResponse Get([FromQuery] string name)
         {
             Log.Info($"Looking up employee by name: {name}");
+            try
+            {
+                var employee = new Employee(_employeeRepository.GetEmployeeByName(name));
 
-            var employee = new Employee(_employeeRepository.GetEmployeeByName(name));
-
-            Log.Info("Found employee: " + employee);
-            return new EmployeeResponse(employee);
+                Log.Info("Found employee: " + employee);
+                return new EmployeeResponse(employee);
+            }
+            
+            catch
+            {
+                var employees = _employeeRepository.GetEmployeesByName(name);
+                var employeesResponse = new List<Employee>();
+                foreach (var employee in employees) {
+                    employeesResponse.Add(new Employee(employee));
+                }
+                return new EmployeeResponse(employeesResponse);
+            }
         }
 
         [HttpGet("{warehouseId}")]
@@ -42,7 +58,7 @@ namespace ShipIt.Controllers
                 .Select(e => new Employee(e));
 
             Log.Info(String.Format("Found employees: {0}", employees));
-            
+
             return new EmployeeResponse(employees);
         }
 
@@ -76,6 +92,10 @@ namespace ShipIt.Controllers
 
             try
             {
+                // var response = new EmployeeResponse( new Employee(_employeeRepository.GetEmployeeByName(name)));
+                // if (response.Employees.Count() > 1) {
+
+                // }
                 _employeeRepository.RemoveEmployee(name);
             }
             catch (NoSuchEntityException)

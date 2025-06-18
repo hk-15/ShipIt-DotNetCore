@@ -1,8 +1,8 @@
 ﻿﻿using System;
 using System.Collections.Generic;
 using System.Linq;
- using NUnit.Framework;
- using ShipIt.Controllers;
+using NUnit.Framework;
+using ShipIt.Controllers;
 using ShipIt.Exceptions;
 using ShipIt.Models.ApiModels;
 using ShipIt.Repositories;
@@ -23,10 +23,16 @@ namespace ShipItTest
         {
             onSetUp();
             var employee = new EmployeeBuilder().CreateEmployee();
-            employeeRepository.AddEmployees(new List<Employee>() {employee});
-            Assert.AreEqual(employeeRepository.GetEmployeeByName(employee.Name).Name, employee.Name);
+            employeeRepository.AddEmployees(new List<Employee>() { employee });
+            Assert.AreEqual(
+                employeeRepository.GetEmployeeByName(employee.Name).Name,
+                employee.Name
+            );
             Assert.AreEqual(employeeRepository.GetEmployeeByName(employee.Name).Ext, employee.ext);
-            Assert.AreEqual(employeeRepository.GetEmployeeByName(employee.Name).WarehouseId, employee.WarehouseId);
+            Assert.AreEqual(
+                employeeRepository.GetEmployeeByName(employee.Name).WarehouseId,
+                employee.WarehouseId
+            );
         }
 
         [Test]
@@ -34,7 +40,9 @@ namespace ShipItTest
         {
             onSetUp();
             var employeeBuilder = new EmployeeBuilder().setName(NAME);
-            employeeRepository.AddEmployees(new List<Employee>() {employeeBuilder.CreateEmployee()});
+            employeeRepository.AddEmployees(
+                new List<Employee>() { employeeBuilder.CreateEmployee() }
+            );
             var result = employeeController.Get(NAME);
 
             var correctEmployee = employeeBuilder.CreateEmployee();
@@ -48,7 +56,13 @@ namespace ShipItTest
             onSetUp();
             var employeeBuilderA = new EmployeeBuilder().setWarehouseId(WAREHOUSE_ID).setName("A");
             var employeeBuilderB = new EmployeeBuilder().setWarehouseId(WAREHOUSE_ID).setName("B");
-            employeeRepository.AddEmployees(new List<Employee>() { employeeBuilderA.CreateEmployee(), employeeBuilderB.CreateEmployee() });
+            employeeRepository.AddEmployees(
+                new List<Employee>()
+                {
+                    employeeBuilderA.CreateEmployee(),
+                    employeeBuilderB.CreateEmployee(),
+                }
+            );
             var result = employeeController.Get(WAREHOUSE_ID).Employees.ToList();
 
             var correctEmployeeA = employeeBuilderA.CreateEmployee();
@@ -101,7 +115,9 @@ namespace ShipItTest
             var correctDatabaseEmploye = employeeBuilder.CreateEmployee();
 
             Assert.IsTrue(response.Success);
-            Assert.IsTrue(EmployeesAreEqual(new Employee(databaseEmployee), correctDatabaseEmploye));
+            Assert.IsTrue(
+                EmployeesAreEqual(new Employee(databaseEmployee), correctDatabaseEmploye)
+            );
         }
 
         [Test]
@@ -109,7 +125,9 @@ namespace ShipItTest
         {
             onSetUp();
             var employeeBuilder = new EmployeeBuilder().setName(NAME);
-            employeeRepository.AddEmployees(new List<Employee>() { employeeBuilder.CreateEmployee() });
+            employeeRepository.AddEmployees(
+                new List<Employee>() { employeeBuilder.CreateEmployee() }
+            );
 
             var removeEmployeeRequest = new RemoveEmployeeRequest() { Name = NAME };
             employeeController.Delete(removeEmployeeRequest);
@@ -147,7 +165,9 @@ namespace ShipItTest
         {
             onSetUp();
             var employeeBuilder = new EmployeeBuilder().setName(NAME);
-            employeeRepository.AddEmployees(new List<Employee>() { employeeBuilder.CreateEmployee() });
+            employeeRepository.AddEmployees(
+                new List<Employee>() { employeeBuilder.CreateEmployee() }
+            );
             var addEmployeesRequest = employeeBuilder.CreateAddEmployeesRequest();
 
             try
@@ -164,9 +184,9 @@ namespace ShipItTest
         private bool EmployeesAreEqual(Employee A, Employee B)
         {
             return A.WarehouseId == B.WarehouseId
-                   && A.Name == B.Name
-                   && A.role == B.role
-                   && A.ext == B.ext;
+                && A.Name == B.Name
+                && A.role == B.role
+                && A.ext == B.ext;
         }
     }
 }
