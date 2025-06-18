@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Runtime.CompilerServices;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 using ShipIt.Exceptions;
 using ShipIt.Models.ApiModels;
 using ShipIt.Repositories;
@@ -36,15 +38,15 @@ namespace ShipIt.Controllers
                 Log.Info("Found employee: " + employee);
                 return new EmployeeResponse(employee);
             }
-            
             catch
             {
                 var employees = _employeeRepository.GetEmployeesByName(name);
-                var employeesResponse = new List<Employee>();
-                foreach (var employee in employees) {
-                    employeesResponse.Add(new Employee(employee));
+                var employeesList = new List<Employee>();
+                foreach (var employee in employees)
+                {
+                    employeesList.Add(new Employee(employee));
                 }
-                return new EmployeeResponse(employeesResponse);
+                return new EmployeeResponse(employeesList);
             }
         }
 
@@ -82,7 +84,7 @@ namespace ShipIt.Controllers
         }
 
         [HttpDelete("")]
-        public void Delete([FromBody] RemoveEmployeeRequest requestModel)
+        public ObjectResult Delete([FromBody] RemoveEmployeeRequest requestModel)
         {
             string name = requestModel.Name;
             if (name == null)
@@ -90,13 +92,29 @@ namespace ShipIt.Controllers
                 throw new MalformedRequestException("Unable to parse name from request parameters");
             }
 
+            var employees = _employeeRepository.GetEmployeesByName(name);
+            var employeesList = new List<Employee>();
+            foreach (var employee in employees)
+            {
+                employeesList.Add(new Employee(employee));
+            }
+            if (employeesList.Count() > 1)
+            {
+                // throw new MalformedRequestException("There is more than one employee with this name, please use the Delete by ID endpoint.");
+                var employeeResponse = new EmployeeResponse(employeesList);
+                employeeResponse.Success = false;
+                string jsonEmployeeResponse = JsonConvert.SerializeObject(employeeResponse);
+                string errorMessageAndResponse =
+                    "Two employees exist with this name, please use attached information to delete by ID"
+                    + jsonEmployeeResponse;
+                // return employeeResponse;
+                return BadRequest(errorMessageAndResponse);
+            }
+
             try
             {
-                // var response = new EmployeeResponse( new Employee(_employeeRepository.GetEmployeeByName(name)));
-                // if (response.Employees.Count() > 1) {
-
-                // }
                 _employeeRepository.RemoveEmployee(name);
+                return Accepted();
             }
             catch (NoSuchEntityException)
             {
