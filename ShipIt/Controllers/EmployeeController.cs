@@ -100,14 +100,13 @@ namespace ShipIt.Controllers
             }
             if (employeesList.Count() > 1)
             {
-                // throw new MalformedRequestException("There is more than one employee with this name, please use the Delete by ID endpoint.");
+
                 var employeeResponse = new EmployeeResponse(employeesList);
                 employeeResponse.Success = false;
                 string jsonEmployeeResponse = JsonConvert.SerializeObject(employeeResponse);
                 string errorMessageAndResponse =
                     "Two or more employees exist with this name, please use attached information to delete by ID"
                     + jsonEmployeeResponse;
-                // return employeeResponse;
                 return BadRequest(errorMessageAndResponse);
             }
 
