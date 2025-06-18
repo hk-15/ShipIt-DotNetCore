@@ -26,6 +26,8 @@ It should look something like this:
 POSTGRES_CONNECTION_STRING="Server=localhost;Port=5432;Database=your_database_name;User Id=your_database_user; Password=your_database_password;"
 
 ```
+## Adding Index
+Using pgAdmin add index to column gcp_cd on table gtin
 
 ## Running The API
 The project uses .NET Core 3.1 so you'll need to update the target framework in the .csproj file to the latest version of .NET installed on your dev machine.
@@ -36,3 +38,6 @@ Update the target framework as above, and run the tests with `dotnet test` in th
 
 ## Deploying to Production
 TODO
+
+
+
