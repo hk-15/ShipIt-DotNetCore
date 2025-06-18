@@ -105,7 +105,7 @@ namespace ShipIt.Controllers
                 employeeResponse.Success = false;
                 string jsonEmployeeResponse = JsonConvert.SerializeObject(employeeResponse);
                 string errorMessageAndResponse =
-                    "Two employees exist with this name, please use attached information to delete by ID"
+                    "Two or more employees exist with this name, please use attached information to delete by ID"
                     + jsonEmployeeResponse;
                 // return employeeResponse;
                 return BadRequest(errorMessageAndResponse);
