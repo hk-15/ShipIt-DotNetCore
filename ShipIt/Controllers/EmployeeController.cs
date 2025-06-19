@@ -76,10 +76,10 @@ namespace ShipIt.Controllers
                     if (existingEmployee != null)
                     {
                         string existingEmployeeRole = existingEmployee.Role.ToString().ToUpper();
-                        string employeeRole = employee.role.ToString().ToUpper();
+                        string employeeRole = employee.role.ToString().Replace('_', ' ').ToUpper();
 
-                        // Console.WriteLine(existingEmployeeRole);
-                        // Console.WriteLine(employeeRole);
+                        Console.WriteLine(existingEmployeeRole);
+                        Console.WriteLine(employeeRole);
 
                         if ((existingEmployee.WarehouseId == employee.WarehouseId) && (existingEmployeeRole == employeeRole) && (existingEmployee.Ext == employee.ext))
                         {
