@@ -34,10 +34,15 @@ namespace ShipIt.Repositories
                 {
                     reader.Close();
                 }
-            };
+            }
+            ;
         }
-        
-        protected void RunSingleQuery(string sql, string noResultsExceptionMessage, params NpgsqlParameter[] parameters)
+
+        protected void RunSingleQuery(
+            string sql,
+            string noResultsExceptionMessage,
+            params NpgsqlParameter[] parameters
+        )
         {
             using (IDbConnection connection = Connection)
             {
@@ -62,10 +67,14 @@ namespace ShipIt.Repositories
                 {
                     reader.Close();
                 }
-            };
+            }
+            ;
         }
 
-        protected int RunSingleQueryAndReturnRecordsAffected(string sql, params NpgsqlParameter[] parameters)
+        protected int RunSingleQueryAndReturnRecordsAffected(
+            string sql,
+            params NpgsqlParameter[] parameters
+        )
         {
             using (IDbConnection connection = Connection)
             {
@@ -87,15 +96,26 @@ namespace ShipIt.Repositories
                     reader.Close();
                 }
                 return reader.RecordsAffected;
-            };
+            }
+            ;
         }
 
-        protected TDataModel RunSingleGetQuery<TDataModel>(string sql, Func<IDataReader, TDataModel> mapToDataModel, string noResultsExceptionMessage, params NpgsqlParameter[] parameters)
+        protected TDataModel RunSingleGetQuery<TDataModel>(
+            string sql,
+            Func<IDataReader, TDataModel> mapToDataModel,
+            string noResultsExceptionMessage,
+            params NpgsqlParameter[] parameters
+        )
         {
             return RunGetQuery(sql, mapToDataModel, noResultsExceptionMessage, parameters).Single();
         }
 
-        protected IEnumerable<TDataModel> RunGetQuery<TDataModel>(string sql, Func<IDataReader, TDataModel> mapToDataModel, string noResultsExceptionMessage, params NpgsqlParameter[] parameters)
+        protected IEnumerable<TDataModel> RunGetQuery<TDataModel>(
+            string sql,
+            Func<IDataReader, TDataModel> mapToDataModel,
+            string noResultsExceptionMessage,
+            params NpgsqlParameter[] parameters
+        )
         {
             using (IDbConnection connection = Connection)
             {
@@ -128,7 +148,8 @@ namespace ShipIt.Repositories
                 {
                     reader.Close();
                 }
-            };
+            }
+            ;
         }
 
         protected void RunQuery(string sql, params NpgsqlParameter[] parameters)
@@ -152,7 +173,8 @@ namespace ShipIt.Repositories
                 {
                     reader.Close();
                 }
-            };
+            }
+            ;
         }
 
         protected void RunTransaction(string sql, List<NpgsqlParameter[]> parametersList)

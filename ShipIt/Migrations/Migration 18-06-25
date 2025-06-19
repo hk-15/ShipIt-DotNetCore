@@ -1,4 +1,4 @@
-Add Migration:
+-- Add Migration:
 
 ALTER TABLE em ADD id SERIAL;
 ALTER TABLE em DROP CONSTRAINT em_pkey;
@@ -7,7 +7,7 @@ ALTER TABLE em ADD PRIMARY KEY (id);
 
 
 
-Rollback:
+-- Rollback:
 
 ALTER TABLE em DROP CONSTRAINT em_pkey;
 ALTER TABLE em ADD PRIMARY KEY (name);
