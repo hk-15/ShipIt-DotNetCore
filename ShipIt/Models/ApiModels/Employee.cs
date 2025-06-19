@@ -32,26 +32,28 @@ namespace ShipIt.Models.ApiModels
 
         private EmployeeRole MapDatabaseRoleToApiRole(string databaseRole)
         {
-            if (databaseRole == DataBaseRoles.Cleaner) return EmployeeRole.CLEANER;
-            if (databaseRole == DataBaseRoles.Manager) return EmployeeRole.MANAGER;
-            if (databaseRole == DataBaseRoles.OperationsManager) return EmployeeRole.OPERATIONS_MANAGER;
-            if (databaseRole == DataBaseRoles.Picker) return EmployeeRole.PICKER;
+            if (databaseRole == DataBaseRoles.Cleaner)
+                return EmployeeRole.CLEANER;
+            if (databaseRole == DataBaseRoles.Manager)
+                return EmployeeRole.MANAGER;
+            if (databaseRole == DataBaseRoles.OperationsManager)
+                return EmployeeRole.OPERATIONS_MANAGER;
+            if (databaseRole == DataBaseRoles.Picker)
+                return EmployeeRole.PICKER;
             throw new ArgumentOutOfRangeException("DatabaseRole");
         }
 
         //Empty constructor needed for Xml serialization
-        public Employee()
-        {
-        }
+        public Employee() { }
 
         public override String ToString()
         {
             return new StringBuilder()
-                    .AppendFormat("name: {0}, ", Name)
-                    .AppendFormat("warehouseId: {0}, ", WarehouseId)
-                    .AppendFormat("role: {0}, ", role)
-                    .AppendFormat("ext: {0}", ext)
-                    .ToString();
+                .AppendFormat("name: {0}, ", Name)
+                .AppendFormat("warehouseId: {0}, ", WarehouseId)
+                .AppendFormat("role: {0}, ", role)
+                .AppendFormat("ext: {0}", ext)
+                .ToString();
         }
     }
 }

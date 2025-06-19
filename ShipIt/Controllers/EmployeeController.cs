@@ -9,7 +9,9 @@ using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using ShipIt.Exceptions;
 using ShipIt.Models.ApiModels;
+using ShipIt.Models.DataModels;
 using ShipIt.Repositories;
+
 
 namespace ShipIt.Controllers
 {
@@ -60,49 +62,45 @@ namespace ShipIt.Controllers
         public Response Post([FromBody] AddEmployeesRequest requestModel)
         {
             List<Employee> employeesToAdd = requestModel.Employees;
-            //List<Employee> duplicateEmployees = new List<Employee>();
-            //List<Employee> employeesToAdd = new List<Employee>();
+            var checkDatabaseCount = _employeeRepository.GetCount();
 
-            if (employeesToAdd.Count == 0)
+            if (checkDatabaseCount != 0)
             {
-                throw new MalformedRequestException("Expected at least one <employee> tag");
-            }
-            try
-            {
+                if (employeesToAdd.Count == 0)
+                {
+                    throw new MalformedRequestException("Expected at least one <employee> tag");
+                }
+
+                var allEmployees = _employeeRepository.GetAllEmployees();
 
                 foreach (var employee in employeesToAdd)
                 {
-                    var existingEmployee = _employeeRepository.GetEmployeeByName(employee.Name);
+                    var existingEmployee = allEmployees.SingleOrDefault(e => e.Name == employee.Name);
+
                     if (existingEmployee != null)
                     {
                         string existingEmployeeRole = existingEmployee.Role.ToString().ToUpper();
                         string employeeRole = employee.role.ToString().ToUpper();
 
-                        // Console.WriteLine(existingEmployeeRole);
-                        // Console.WriteLine(employeeRole);
-
-                        if ((existingEmployee.WarehouseId == employee.WarehouseId) && (existingEmployeeRole == employeeRole) && (existingEmployee.Ext == employee.ext))
+                        if (
+                            (existingEmployee.WarehouseId == employee.WarehouseId)
+                            && (existingEmployeeRole == employeeRole)
+                            && (existingEmployee.Ext == employee.ext)
+                        )
                         {
                             Console.WriteLine("Duplicate found");
-                            throw new MalformedRequestException("Duplicate employee found");
+                            Log.Info("Duplicate Employee Found:" + existingEmployee);
+                            throw new MalformedRequestException(
+                                "Duplicate employee found" + existingEmployee
+                            );
                         }
-
                     }
                 }
-                Log.Info("Adding employees: " + employeesToAdd);
-                _employeeRepository.AddEmployees(employeesToAdd);
-                Log.Debug("Employees added successfully");
-                return new Response { Success = true };
             }
-            catch (NoSuchEntityException)
-            {
-                Log.Info("Adding employees: " + employeesToAdd);
-                _employeeRepository.AddEmployees(employeesToAdd);
-                Log.Debug("Employees added successfully");
-                return new Response { Success = true };
-            }
-               
-
+            Log.Info("Adding employees: " + employeesToAdd);
+            _employeeRepository.AddEmployees(employeesToAdd);
+            Log.Debug("Employees added successfully");
+            return new Response { Success = true };
         }
 
         [HttpDelete("")]
@@ -138,7 +136,6 @@ namespace ShipIt.Controllers
         [HttpDelete("{id}")]
         public ObjectResult Delete([FromRoute] int id)
         {
-
             try
             {
                 _employeeRepository.RemoveEmployeeById(id);
