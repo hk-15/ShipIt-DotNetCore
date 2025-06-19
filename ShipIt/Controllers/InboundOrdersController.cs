@@ -36,159 +36,87 @@ namespace ShipIt.Controllers
             _productRepository = productRepository;
         }
 
-        // [HttpGet("{warehouseId}")]
-        // public InboundOrderResponse Get([FromRoute] int warehouseId)
-        // {
-        //     Log.Info("orderIn for warehouseId: " + warehouseId);
-
-        //     Stopwatch timer = new Stopwatch();
-
-        //     var operationsManager = new Employee(
-        //         _employeeRepository.GetOperationsManager(warehouseId)
-        //     );
-
-        //     Log.Debug(String.Format("Found operations manager: {0}", operationsManager));
-
-        //     var allStock = _stockRepository.GetStockByWarehouseId(warehouseId);
-        //     var products = _productRepository.GetProductsById(
-        //         allStock.Select(stock => stock.ProductId)
-        //     );
-
-        //     var productDictionary = products.ToDictionary(product => product.Id);
-        //     var allCompanies = _companyRepository.GetAllCompanies(products.Select(product => product.Gcp));
-        //     var companyDictionary = allCompanies.ToDictionary(company => company.Gcp);
-            
-
-        //     Dictionary<Company, List<InboundOrderLine>> orderlinesByCompany =
-        //         new Dictionary<Company, List<InboundOrderLine>>();
-
-        //     timer.Start();
-        //     foreach (var stock in allStock)
-        //     {
-        //         if(productDictionary.TryGetValue(stock.ProductId, out var product))
-        //         {
-        //             if (stock.held < product.LowerThreshold && product.Discontinued != 1)
-        //                 timer.Start();
-
-        //             {
-        //                 if(companyDictionary.TryGetValue(product.Gcp, out var companyData))
-        //                 {
-        //                 Company company = new Company(companyData);
-
-        //                 var orderQuantity = Math.Max(
-        //                     product.LowerThreshold * 3 - stock.held,
-        //                     product.MinimumOrderQuantity
-        //                 );
-
-        //                 if (!orderlinesByCompany.ContainsKey(company))
-        //                 {
-        //                     timer.Restart();
-        //                     orderlinesByCompany.Add(company, new List<InboundOrderLine>());
-        //                     timer.Stop();
-        //                     Console.WriteLine("AddCompany " + timer.Elapsed);
-        //                 }
-
-        //                 orderlinesByCompany[company]
-        //                     .Add(
-        //                         new InboundOrderLine()
-        //                         {
-        //                             gtin = product.Gtin,
-        //                             name = product.Name,
-        //                             quantity = orderQuantity,
-        //                         }
-        //                     );
-        //                 }
-        //             }
-        //         }
-        //     }
-        //     timer.Stop();
-        //     Console.WriteLine("All Stock - foreach loop" + timer.Elapsed);
-        //     Log.Debug(String.Format("Constructed order lines: {0}", orderlinesByCompany));
-
-        //     timer.Restart();
-        //     var orderSegments = orderlinesByCompany.Select(ol => new OrderSegment()
-        //     {
-        //         OrderLines = ol.Value,
-        //         Company = ol.Key,
-        //     });
-        //     timer.Stop();
-        //     Console.WriteLine("Order segments " + timer.Elapsed);
-
-        //     Log.Info("Constructed inbound order");
-
-        //     return new InboundOrderResponse()
-        //     {
-        //         OperationsManager = operationsManager,
-        //         WarehouseId = warehouseId,
-        //         OrderSegments = orderSegments,
-        //     };
-        // }
-
-
         [HttpGet("{warehouseId}")]
         public InboundOrderResponse Get([FromRoute] int warehouseId)
         {
             Log.Info("orderIn for warehouseId: " + warehouseId);
 
-            var operationsManager = new Employee(_employeeRepository.GetOperationsManager(warehouseId));
+            Stopwatch timer = new Stopwatch();
+            timer.Start();
+            var operationsManager = new Employee(
+                _employeeRepository.GetOperationsManager(warehouseId)
+            );
 
             Log.Debug(String.Format("Found operations manager: {0}", operationsManager));
             try
             {
-                var products = _productRepository.GetProductsDetails(warehouseId);
+            var allStock = _stockRepository.GetStockByWarehouseId(warehouseId);
+            var products = _productRepository.GetProductsById(
+                allStock.Select(stock => stock.ProductId)
+            );
 
-                Dictionary<Company, List<InboundOrderLine>> orderlinesByCompany = new Dictionary<Company, List<InboundOrderLine>>();
-                foreach (var product in products)
+            var productDictionary = products.ToDictionary(product => product.Id);
+            var allCompanies = _companyRepository.GetAllCompanies(products.Select(product => product.Gcp));
+            var companyDictionary = allCompanies.ToDictionary(company => company.Gcp);
+            
+
+            Dictionary<Company, List<InboundOrderLine>> orderlinesByCompany =
+                new Dictionary<Company, List<InboundOrderLine>>();
+
+            
+            foreach (var stock in allStock)
+            {
+                if(productDictionary.TryGetValue(stock.ProductId, out var product))
                 {
-                    if (product.Held < product.LowerThreshold && product.Discontinued != 1)
-                    {
-                        Company company = new Company
-                        {
-                            Gcp = product.Gcp,
-                            Name = product.CompanyName,
-                            Addr2 = product.Addr2,
-                            Addr3 = product.Addr3,
-                            Addr4 = product.Addr4,
-                            PostalCode = product.PostalCode,
-                            City = product.City,
-                            Tel = product.Tel,
-                            Mail = product.Mail
-                        };
+                    if (stock.held < product.LowerThreshold && product.Discontinued != 1)
 
-                        var orderQuantity = Math.Max(product.LowerThreshold * 3 - product.Held, product.MinimumOrderQuantity);
+                    {
+                        if(companyDictionary.TryGetValue(product.Gcp, out var companyData))
+                        {
+                        Company company = new Company(companyData);
+
+                        var orderQuantity = Math.Max(
+                            product.LowerThreshold * 3 - stock.held,
+                            product.MinimumOrderQuantity
+                        );
 
                         if (!orderlinesByCompany.ContainsKey(company))
                         {
                             orderlinesByCompany.Add(company, new List<InboundOrderLine>());
                         }
 
-                        orderlinesByCompany[company].Add(
-                            new InboundOrderLine()
-                            {
-                                gtin = product.Gtin,
-                                name = product.ProductName,
-                                quantity = orderQuantity
-                            });
+                        orderlinesByCompany[company]
+                            .Add(
+                                new InboundOrderLine()
+                                {
+                                    gtin = product.Gtin,
+                                    name = product.Name,
+                                    quantity = orderQuantity,
+                                }
+                            );
+                        }
                     }
                 }
-
-                Log.Debug(String.Format("Constructed order lines: {0}", orderlinesByCompany));
-
-                var orderSegments = orderlinesByCompany.Select(ol => new OrderSegment()
-                {
-                    OrderLines = ol.Value,
-                    Company = ol.Key
-                });
-
-                Log.Info("Constructed inbound order");
-
-                return new InboundOrderResponse()
-                {
-                    OperationsManager = operationsManager,
-                    WarehouseId = warehouseId,
-                    OrderSegments = orderSegments
-                };
             }
+            Log.Debug(String.Format("Constructed order lines: {0}", orderlinesByCompany));
+
+            var orderSegments = orderlinesByCompany.Select(ol => new OrderSegment()
+            {
+                OrderLines = ol.Value,
+                Company = ol.Key,
+            });
+
+            Log.Info("Constructed inbound order");
+
+            timer.Stop();
+            Console.WriteLine("Time elapsed " + timer.Elapsed);
+            return new InboundOrderResponse()
+            {
+                OperationsManager = operationsManager,
+                WarehouseId = warehouseId,
+                OrderSegments = orderSegments,
+            };
+        }
             catch
             {
                 return new InboundOrderResponse()
@@ -199,6 +127,82 @@ namespace ShipIt.Controllers
                     }; 
             }
         }
+
+
+        // [HttpGet("{warehouseId}")]
+        // public InboundOrderResponse Get([FromRoute] int warehouseId)
+        // {
+        //     Log.Info("orderIn for warehouseId: " + warehouseId);
+
+        //     var operationsManager = new Employee(_employeeRepository.GetOperationsManager(warehouseId));
+
+        //     Log.Debug(String.Format("Found operations manager: {0}", operationsManager));
+        //     try
+        //     {
+        //         var products = _productRepository.GetProductsDetails(warehouseId);
+
+        //         Dictionary<Company, List<InboundOrderLine>> orderlinesByCompany = new Dictionary<Company, List<InboundOrderLine>>();
+        //         foreach (var product in products)
+        //         {
+        //             if (product.Held < product.LowerThreshold && product.Discontinued != 1)
+        //             {
+        //                 Company company = new Company
+        //                 {
+        //                     Gcp = product.Gcp,
+        //                     Name = product.CompanyName,
+        //                     Addr2 = product.Addr2,
+        //                     Addr3 = product.Addr3,
+        //                     Addr4 = product.Addr4,
+        //                     PostalCode = product.PostalCode,
+        //                     City = product.City,
+        //                     Tel = product.Tel,
+        //                     Mail = product.Mail
+        //                 };
+
+        //                 var orderQuantity = Math.Max(product.LowerThreshold * 3 - product.Held, product.MinimumOrderQuantity);
+
+        //                 if (!orderlinesByCompany.ContainsKey(company))
+        //                 {
+        //                     orderlinesByCompany.Add(company, new List<InboundOrderLine>());
+        //                 }
+
+        //                 orderlinesByCompany[company].Add(
+        //                     new InboundOrderLine()
+        //                     {
+        //                         gtin = product.Gtin,
+        //                         name = product.ProductName,
+        //                         quantity = orderQuantity
+        //                     });
+        //             }
+        //         }
+
+        //         Log.Debug(String.Format("Constructed order lines: {0}", orderlinesByCompany));
+
+        //         var orderSegments = orderlinesByCompany.Select(ol => new OrderSegment()
+        //         {
+        //             OrderLines = ol.Value,
+        //             Company = ol.Key
+        //         });
+
+        //         Log.Info("Constructed inbound order");
+
+        //         return new InboundOrderResponse()
+        //         {
+        //             OperationsManager = operationsManager,
+        //             WarehouseId = warehouseId,
+        //             OrderSegments = orderSegments
+        //         };
+        //     }
+        //     catch
+        //     {
+        //         return new InboundOrderResponse()
+        //             {
+        //                 OperationsManager = operationsManager,
+        //                 WarehouseId = warehouseId,
+        //                 OrderSegments = []
+        //             }; 
+        //     }
+        // }
 
         [HttpPost("")]
         public void Post([FromBody] InboundManifestRequestModel requestModel)

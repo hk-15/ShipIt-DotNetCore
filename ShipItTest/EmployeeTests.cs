@@ -17,6 +17,8 @@ namespace ShipItTest
 
         private const string NAME = "Gissell Sadeem";
         private const int WAREHOUSE_ID = 1;
+        private const EmployeeRole ROLE = EmployeeRole.OPERATIONS_MANAGER;
+        private const String EXT = "73996";
 
         [Test]
         public void TestRoundtripEmployeeRepository()
@@ -164,7 +166,7 @@ namespace ShipItTest
         public void TestAddDuplicateEmployee()
         {
             onSetUp();
-            var employeeBuilder = new EmployeeBuilder().setName(NAME);
+            var employeeBuilder = new EmployeeBuilder().setName(NAME).setWarehouseId(WAREHOUSE_ID).setRole(ROLE).setExt(EXT);
             employeeRepository.AddEmployees(
                 new List<Employee>() { employeeBuilder.CreateEmployee() }
             );

@@ -31,23 +31,15 @@ namespace ShipIt.Controllers
         public EmployeeResponse Get([FromQuery] string name)
         {
             Log.Info($"Looking up employee by name: {name}");
-            try
+            var employees = _employeeRepository.GetEmployeesByName(name);
+            var employeesList = new List<Employee>();
+            foreach (var employee in employees)
             {
-                var employee = new Employee(_employeeRepository.GetEmployeeByName(name));
-
-                Log.Info("Found employee: " + employee);
-                return new EmployeeResponse(employee);
+                var employeeModel = new Employee(employee);
+                Log.Info("Found employee: " + employeeModel);
+                employeesList.Add(employeeModel);
             }
-            catch
-            {
-                var employees = _employeeRepository.GetEmployeesByName(name);
-                var employeesList = new List<Employee>();
-                foreach (var employee in employees)
-                {
-                    employeesList.Add(new Employee(employee));
-                }
-                return new EmployeeResponse(employeesList);
-            }
+            return new EmployeeResponse(employeesList);
         }
 
         [HttpGet("{warehouseId}")]
@@ -68,19 +60,49 @@ namespace ShipIt.Controllers
         public Response Post([FromBody] AddEmployeesRequest requestModel)
         {
             List<Employee> employeesToAdd = requestModel.Employees;
+            //List<Employee> duplicateEmployees = new List<Employee>();
+            //List<Employee> employeesToAdd = new List<Employee>();
 
             if (employeesToAdd.Count == 0)
             {
                 throw new MalformedRequestException("Expected at least one <employee> tag");
             }
+            try
+            {
 
-            Log.Info("Adding employees: " + employeesToAdd);
+                foreach (var employee in employeesToAdd)
+                {
+                    var existingEmployee = _employeeRepository.GetEmployeeByName(employee.Name);
+                    if (existingEmployee != null)
+                    {
+                        string existingEmployeeRole = existingEmployee.Role.ToString().ToUpper();
+                        string employeeRole = employee.role.ToString().ToUpper();
 
-            _employeeRepository.AddEmployees(employeesToAdd);
+                        // Console.WriteLine(existingEmployeeRole);
+                        // Console.WriteLine(employeeRole);
 
-            Log.Debug("Employees added successfully");
+                        if ((existingEmployee.WarehouseId == employee.WarehouseId) && (existingEmployeeRole == employeeRole) && (existingEmployee.Ext == employee.ext))
+                        {
+                            Console.WriteLine("Duplicate found");
+                            throw new MalformedRequestException("Duplicate employee found");
+                        }
 
-            return new Response() { Success = true };
+                    }
+                }
+                Log.Info("Adding employees: " + employeesToAdd);
+                _employeeRepository.AddEmployees(employeesToAdd);
+                Log.Debug("Employees added successfully");
+                return new Response { Success = true };
+            }
+            catch (NoSuchEntityException)
+            {
+                Log.Info("Adding employees: " + employeesToAdd);
+                _employeeRepository.AddEmployees(employeesToAdd);
+                Log.Debug("Employees added successfully");
+                return new Response { Success = true };
+            }
+               
+
         }
 
         [HttpDelete("")]
@@ -92,18 +114,10 @@ namespace ShipIt.Controllers
                 throw new MalformedRequestException("Unable to parse name from request parameters");
             }
 
-            var employees = _employeeRepository.GetEmployeesByName(name);
-            var employeesList = new List<Employee>();
-            foreach (var employee in employees)
+            var employees = _employeeRepository.GetEmployeesByName(name).ToList();
+            if (employees.Count() > 1)
             {
-                employeesList.Add(new Employee(employee));
-            }
-            if (employeesList.Count() > 1)
-            {
-
-                var employeeResponse = new EmployeeResponse(employeesList);
-                employeeResponse.Success = false;
-                string jsonEmployeeResponse = JsonConvert.SerializeObject(employeeResponse);
+                string jsonEmployeeResponse = JsonConvert.SerializeObject(employees);
                 string errorMessageAndResponse =
                     "Two or more employees exist with this name, please use attached information to delete by ID"
                     + jsonEmployeeResponse;
@@ -118,6 +132,21 @@ namespace ShipIt.Controllers
             catch (NoSuchEntityException)
             {
                 throw new NoSuchEntityException("No employee exists with name: " + name);
+            }
+        }
+
+        [HttpDelete("{id}")]
+        public ObjectResult Delete([FromRoute] int id)
+        {
+
+            try
+            {
+                _employeeRepository.RemoveEmployeeById(id);
+                return Accepted();
+            }
+            catch (NoSuchEntityException)
+            {
+                throw new NoSuchEntityException("No employee exists with Id: " + id);
             }
         }
     }

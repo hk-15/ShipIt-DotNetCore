@@ -22,6 +22,14 @@ namespace ShipIt.Models.ApiModels
             ext = dataModel.Ext;
         }
 
+        public Employee(EmployeeIdDataModel dataModel)
+        {
+            Name = dataModel.Name;
+            WarehouseId = dataModel.WarehouseId;
+            role = MapDatabaseRoleToApiRole(dataModel.Role);
+            ext = dataModel.Ext;
+        }
+
         private EmployeeRole MapDatabaseRoleToApiRole(string databaseRole)
         {
             if (databaseRole == DataBaseRoles.Cleaner) return EmployeeRole.CLEANER;
